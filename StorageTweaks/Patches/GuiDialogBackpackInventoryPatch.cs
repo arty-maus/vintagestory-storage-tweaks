@@ -2,6 +2,7 @@
 // ReSharper disable UnusedType.Global
 // ReSharper disable ClassNeverInstantiated.Global
 
+using System;
 using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -28,7 +29,7 @@ public class GuiDialogBackpackInventoryPatch
             return;
 
         PatchUtils.AddButton(composer, "sort", -60,
-            inventory => PatchUtils.SendPacket(capi, new SortInventoryPacket { InventoryId = inventory.InventoryID }));
+            inventory => PatchUtils.SendPacket(capi, new SortInventoryPacket { InventoryId = inventory.InventoryID }), Lang.Get("storagetweaks:compact-and-sort"));
 
         AddFavoriteToggle(composer, capi);
         AddFavoritesHideToggle(composer, capi);
@@ -64,8 +65,7 @@ public class GuiDialogBackpackInventoryPatch
     private static void AddFavoritesHideToggle(GuiComposer composer, ICoreClientAPI capi)
     {
         var bounds = ElementBounds.Fixed(EnumDialogArea.RightTop, -112, 5, 24, 24);
-        var toggleBtn = new GuiElementToggleButton(composer.Api, "", "", CairoFont.SmallButtonText(),
-            on => GuiElementItemSlotGridPatch.HideFavorites = on, bounds, true);
+        var toggleBtn = new GuiElementToggleButton(composer.Api, "", "", CairoFont.SmallButtonText(), on => GuiElementItemSlotGridPatch.HideFavorites = on, bounds, true);
         toggleBtn.On = GuiElementItemSlotGridPatch.HideFavorites;
         composer.AddInteractiveElement(toggleBtn, "storagetweaks-hide-favorites").AddDynamicCustomDraw(bounds,
             (_, surface, _) =>
@@ -76,7 +76,7 @@ public class GuiDialogBackpackInventoryPatch
                 var margin = (int)GuiElement.scaled(2);
                 if (icon != null)
                     capi.Gui.DrawSvg(icon, surface, margin, margin, iconSize, iconSize, SvgButton.NormalColor);
-            }).AddHoverText(Lang.Get("storagetweaks:hide-favorites-toggle"), CairoFont.WhiteSmallText(), 250,
+            }).AddHoverText(Lang.Get("storagetweaks:toggle-hide-favorites"), CairoFont.WhiteSmallText(), 250,
             bounds.FlatCopy());
     }
 }
