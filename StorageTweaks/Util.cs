@@ -24,22 +24,33 @@ public static class Util
     {
         var slots = inventory.ToList();
         if (!IsPlayerBackpack(inventory)) return slots;
-        var ok = TryGetField(inventory, "CountForNetworkPacket", out int countForNetworkPacket);
-        if (!ok)
+        var countForNetworkPacket = TryGetField<int>(inventory, "CountForNetworkPacket");
+        if (countForNetworkPacket == 0)
         {
-            StorageTweaksModSystem.Logger().Warning("Failed to get CountForNetworkPacket from inventory");
+            StorageTweaksModSystem.Logger().Warning("[StorageTweaks] Failed to get CountForNetworkPacket from inventory");
         }
 
         return slots.Slice(countForNetworkPacket, slots.Count - countForNetworkPacket);
     }
 
-    private static bool TryGetField<T>(object? instance, string fieldName, out T? value,
+    private static T? TryGetField<T>(object? instance, string fieldName,
         BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
     {
-        value = default;
         var fieldInfo = instance?.GetType().GetField(fieldName, bindingFlags);
-        if (fieldInfo == null || !typeof(T).IsAssignableFrom(fieldInfo.FieldType)) return false;
-        value = (T)fieldInfo.GetValue(instance)!;
-        return true;
+        if (fieldInfo == null) return default;
+        if (typeof(T).IsAssignableFrom(fieldInfo?.FieldType)) return (T)fieldInfo.GetValue(instance)!;
+        return default;
+    }
+
+    public static T? TryGetFieldOrProperty<T>(object? instance, string fieldName,
+        BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
+    {
+        var type = instance?.GetType();
+        if (type == null) return default;
+        var fieldInfo = type.GetField(fieldName, bindingFlags);
+        if (typeof(T).IsAssignableFrom(fieldInfo?.FieldType)) return (T)fieldInfo.GetValue(instance)!;
+        var propertyInfo = type.GetProperty(fieldName, bindingFlags);
+        if (typeof(T).IsAssignableFrom(propertyInfo?.PropertyType)) return (T)propertyInfo.GetValue(instance)!;
+        return default;
     }
 }

@@ -30,6 +30,8 @@ public class GuiDialogBackpackInventoryPatch
 
         PatchUtils.AddButton(composer, "sort", -60,
             inventory => PatchUtils.SendPacket(capi, new SortInventoryPacket { InventoryId = inventory.InventoryID }), Lang.Get("storagetweaks:compact-and-sort"));
+        
+        PatchUtils.AddButton(composer, "store-nearby", -86, _ => PatchUtils.SendPacket(capi, new QuickStoreNearbyContainersPacket()), Lang.Get("storagetweaks:store-nearby"));
 
         AddFavoriteToggle(composer, capi);
         AddFavoritesHideToggle(composer, capi);
@@ -41,7 +43,7 @@ public class GuiDialogBackpackInventoryPatch
         var icon = capi.Assets.TryGet(iconAsset);
         if (icon == null) return;
 
-        var bounds = ElementBounds.Fixed(EnumDialogArea.RightTop, -86, 4, 24, 24);
+        var bounds = ElementBounds.Fixed(EnumDialogArea.RightTop, -112, 4, 24, 24);
         _favoriteToggleButton = new SvgToggleButton(
             capi,
             icon,
@@ -64,7 +66,7 @@ public class GuiDialogBackpackInventoryPatch
 
     private static void AddFavoritesHideToggle(GuiComposer composer, ICoreClientAPI capi)
     {
-        var bounds = ElementBounds.Fixed(EnumDialogArea.RightTop, -112, 5, 24, 24);
+        var bounds = ElementBounds.Fixed(EnumDialogArea.RightTop, -138, 5, 24, 24);
         var toggleBtn = new GuiElementToggleButton(composer.Api, "", "", CairoFont.SmallButtonText(), on => GuiElementItemSlotGridPatch.HideFavorites = on, bounds, true);
         toggleBtn.On = GuiElementItemSlotGridPatch.HideFavorites;
         composer.AddInteractiveElement(toggleBtn, "storagetweaks-hide-favorites").AddDynamicCustomDraw(bounds,
