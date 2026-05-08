@@ -3,5 +3,6 @@
   "toggle-hide-favorites": "Toggles whether favorite icon is always shown in item slots or only when favorite selection mode is active.",
   "compact-and-sort": "Compact & sort",
   "quick-store": "Quick store matching items from your inventory and hotbar",
+  "store-nearby": "Quick store items in nearby containers with matching contents",
   "game:item-hoovedwearables-lowerbackside-saddlebags2": "Saddlebags"
 }

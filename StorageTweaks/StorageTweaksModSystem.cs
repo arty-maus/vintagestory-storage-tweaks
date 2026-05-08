@@ -26,6 +26,9 @@ public class UnloadInventoryPacket
 }
 
 [ProtoContract]
+public class QuickStoreNearbyContainersPacket;
+
+[ProtoContract]
 public class UpdateFavoritesPacket
 {
     /// <summary>
@@ -87,7 +90,8 @@ public class StorageTweaksModSystem : ModSystem
         api.Network.RegisterChannel("storagetweaks")
             .RegisterMessageType<SortInventoryPacket>()
             .RegisterMessageType<UnloadInventoryPacket>()
-            .RegisterMessageType<UpdateFavoritesPacket>();
+            .RegisterMessageType<UpdateFavoritesPacket>()
+            .RegisterMessageType<QuickStoreNearbyContainersPacket>();
 
         FavoritesManager.Initialize(api);
         FavoritedSlot.SetApi(api);
@@ -102,9 +106,11 @@ public class StorageTweaksModSystem : ModSystem
             .RegisterMessageType<SortInventoryPacket>()
             .RegisterMessageType<UnloadInventoryPacket>()
             .RegisterMessageType<UpdateFavoritesPacket>()
+            .RegisterMessageType<QuickStoreNearbyContainersPacket>()
             .SetMessageHandler<SortInventoryPacket>(HandleSortInventory)
             .SetMessageHandler<UnloadInventoryPacket>(HandleUnloadInventory)
-            .SetMessageHandler<UpdateFavoritesPacket>(HandleUpdateFavorites);
+            .SetMessageHandler<UpdateFavoritesPacket>(HandleUpdateFavorites)
+            .SetMessageHandler<QuickStoreNearbyContainersPacket>(QuickStoreNearbyContainerSystem.HandleQuickStoreNearbyContainers);
 
         PopulateToolAndFoodCodes(api);
 
@@ -226,6 +232,12 @@ public class StorageTweaksModSystem : ModSystem
             return;
         }
 
+        UnloadInventory(fromPlayer, destInventory);
+    }
+
+    public static void UnloadInventory(IServerPlayer fromPlayer, IInventory destInventory)
+    {
+        var logger = fromPlayer.Entity.World.Logger;
         var playerInv = fromPlayer.InventoryManager.GetOwnInventory(GlobalConstants.backpackInvClassName);
         if (playerInv == null)
         {
