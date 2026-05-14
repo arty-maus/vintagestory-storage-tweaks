@@ -9,6 +9,7 @@ public class ContainerActionButtons(ICoreClientAPI capi)
 {
     public void ComposeGui(GuiComposer composer)
     {
+        var wasComposed = composer.Composed;
         composer.Composed = false;
         PatchUtils.AddButton(composer, "sort", -60,
             inventory => PatchUtils.SendPacket(capi, new SortInventoryPacket { InventoryId = inventory.InventoryID }), Lang.Get("storagetweaks:compact-and-sort"));
@@ -17,6 +18,6 @@ public class ContainerActionButtons(ICoreClientAPI capi)
             inventory =>
                 PatchUtils.SendPacket(capi, new UnloadInventoryPacket { InventoryId = inventory.InventoryID }), Lang.Get("storagetweaks:quick-store"));
 
-        composer.Compose();
+        if (wasComposed) composer.Compose();
     }
 }

@@ -86,7 +86,7 @@ public class GuiDialogInventoryPatch
         modSystem.FavoritesManager.IsFavoriteModeActive = false;
     }
 
-    private static ICoreClientAPI GetApi(GuiDialog dialog)
+    public static ICoreClientAPI GetApi(GuiDialog dialog)
     {
         var field = dialog.GetType().GetField("capi", BindingFlags.NonPublic | BindingFlags.Instance)!;
         return (ICoreClientAPI)field.GetValue(dialog)!;
