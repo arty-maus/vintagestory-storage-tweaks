@@ -13,8 +13,6 @@ namespace StorageTweaks.Patches;
 [HarmonyPatch]
 public class GuiDialogInventoryPatch
 {
-    private static InventoryActionButtons? actionButtons;
-    
     [HarmonyPatch(typeof(GuiDialogInventory), "ComposeSurvivalInvDialog")]
     [HarmonyPostfix]
     // ReSharper disable once InconsistentNaming
@@ -24,10 +22,16 @@ public class GuiDialogInventoryPatch
         var composer = (GuiComposer)field.GetValue(__instance)!;
         var capi = composer.Api!;
         capi.Logger.Debug("[StorageTweaks] Composing inventory action buttons.");
-
-        actionButtons ??= new InventoryActionButtons(capi);
         
-        actionButtons.ComposeGui(composer);
+        var modSystem = composer.Api.ModLoader.GetModSystem<StorageTweaksModSystem>();
+
+        if (modSystem == null)
+        {
+            composer.Api.Logger.Warning("[StorageTweaks] StorageTweaksModSystem not found for gui dialog inventory");
+            return;
+        }
+
+        modSystem.InventoryActionButtons!.ComposeGui(composer);
     }
     
     [HarmonyPatch(typeof(GuiDialogInventory), "OnGuiClosed")]

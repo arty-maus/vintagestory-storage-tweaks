@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using HarmonyLib;
 using ProtoBuf;
+using StorageTweaks.Gui;
 using StorageTweaks.Patches;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -48,6 +49,8 @@ public class StorageTweaksClientConfig
 // ReSharper disable once ClassNeverInstantiated.Global
 public class StorageTweaksModSystem : ModSystem
 {
+    public InventoryActionButtons? InventoryActionButtons;
+    public ContainerActionButtons? ContainerActionButtons;
     private static readonly string[] SlotTypes =
     [
         "ItemSlotSurvival",
@@ -95,6 +98,8 @@ public class StorageTweaksModSystem : ModSystem
 
         FavoritesManager.Initialize(api);
         FavoritedSlot.SetApi(api);
+        InventoryActionButtons = new InventoryActionButtons(capi);
+        ContainerActionButtons = new ContainerActionButtons(capi);
         harmony = new Harmony("storagetweaks");
         harmony.PatchAll();
     }
