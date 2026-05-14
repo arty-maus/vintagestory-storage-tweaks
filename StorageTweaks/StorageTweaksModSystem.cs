@@ -5,7 +5,6 @@ using System.Linq;
 using HarmonyLib;
 using ProtoBuf;
 using StorageTweaks.Gui;
-using StorageTweaks.Patches;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -75,6 +74,7 @@ public class StorageTweaksModSystem : ModSystem
     private ICoreServerAPI? sapi;
     private static ILogger? logger;
 
+    // ReSharper disable once MemberCanBePrivate.Global
     public static ILogger Logger() => logger!;
 
     public override bool ShouldLoad(EnumAppSide forSide)
@@ -305,7 +305,7 @@ public class StorageTweaksModSystem : ModSystem
     {
         // we should probably add checks if the player is allowed to access the inventory
 
-        var slots = Util.GetInventorySlots(inventory);
+        var slots = inventory.ToList();
 
         // Excludes specialized bag slots from sorting,
         // for example, Quivers And Sheaths item slots

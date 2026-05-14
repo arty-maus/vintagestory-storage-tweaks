@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -18,28 +16,6 @@ public static class Util
     public static bool IsPlayerHotbar(IInventory inventory)
     {
         return inventory.ClassName == GlobalConstants.hotBarInvClassName;
-    }
-
-    public static List<ItemSlot> GetInventorySlots(IInventory inventory)
-    {
-        var slots = inventory.ToList();
-        if (!IsPlayerBackpack(inventory)) return slots;
-        var countForNetworkPacket = TryGetField<int>(inventory, "CountForNetworkPacket");
-        if (countForNetworkPacket == 0)
-        {
-            StorageTweaksModSystem.Logger().Warning("[StorageTweaks] Failed to get CountForNetworkPacket from inventory");
-        }
-
-        return slots.Slice(countForNetworkPacket, slots.Count - countForNetworkPacket);
-    }
-
-    private static T? TryGetField<T>(object? instance, string fieldName,
-        BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
-    {
-        var fieldInfo = instance?.GetType().GetField(fieldName, bindingFlags);
-        if (fieldInfo == null) return default;
-        if (typeof(T).IsAssignableFrom(fieldInfo?.FieldType)) return (T)fieldInfo.GetValue(instance)!;
-        return default;
     }
 
     public static T? TryGetFieldOrProperty<T>(object? instance, string fieldName,
