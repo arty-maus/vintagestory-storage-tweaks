@@ -51,6 +51,7 @@ public class StorageTweaksModSystem : ModSystem
     public InventoryActionButtons? InventoryActionButtons;
     public ContainerActionButtons? ContainerActionButtons;
     public FavoritesManager? FavoritesManager;
+
     private static readonly string[] SlotTypes =
     [
         "ItemSlotSurvival",
@@ -90,23 +91,33 @@ public class StorageTweaksModSystem : ModSystem
     public override void StartClientSide(ICoreClientAPI api)
     {
         capi = api;
+        capi.Logger.VerboseDebug("[StorageTweaks] Starting StorageTweaksModSystem client side");
         LoadClientConfig(api);
+        capi.Logger.VerboseDebug("Loaded client config");
         api.Network.RegisterChannel("storagetweaks")
             .RegisterMessageType<SortInventoryPacket>()
             .RegisterMessageType<UnloadInventoryPacket>()
             .RegisterMessageType<UpdateFavoritesPacket>()
             .RegisterMessageType<QuickStoreNearbyContainersPacket>();
+        capi.Logger.VerboseDebug("[StorageTweaks] Registered channels client side");
 
         FavoritesManager = new FavoritesManager(capi);
+        capi.Logger.VerboseDebug("[StorageTweaks] Initialized favorites manager client side");
         InventoryActionButtons = new InventoryActionButtons(capi);
+        capi.Logger.VerboseDebug("[StorageTweaks] Initialized inventory action buttons");
         ContainerActionButtons = new ContainerActionButtons(capi);
+        capi.Logger.VerboseDebug("[StorageTweaks] Initialized container action buttons");
         harmony = new Harmony("storagetweaks");
         harmony.PatchAll();
+        capi.Logger.VerboseDebug("[StorageTweaks] Completed harmony patches");
+
+        capi.Logger.VerboseDebug("[StorageTweaks] Started StorageTweaksModSystem client side");
     }
 
     public override void StartServerSide(ICoreServerAPI api)
     {
         sapi = api;
+        sapi.Logger.VerboseDebug("[StorageTweaks] Starting StorageTweaksModSystem server side");
         api.Network.RegisterChannel("storagetweaks")
             .RegisterMessageType<SortInventoryPacket>()
             .RegisterMessageType<UnloadInventoryPacket>()
@@ -117,10 +128,14 @@ public class StorageTweaksModSystem : ModSystem
             .SetMessageHandler<UpdateFavoritesPacket>(HandleUpdateFavorites)
             .SetMessageHandler<QuickStoreNearbyContainersPacket>(QuickStoreNearbyContainerSystem
                 .HandleQuickStoreNearbyContainers);
+        sapi.Logger.VerboseDebug("[StorageTweaks] Registered channels server side");
 
         PopulateToolAndFoodCodes(api);
+        sapi.Logger.VerboseDebug("[StorageTweaks] Populated tool and food codes");
 
         api.Event.PlayerJoin += OnPlayerJoin;
+
+        sapi.Logger.VerboseDebug("[StorageTweaks] Starting StorageTweaksModSystem server side");
     }
 
     /// <summary>
