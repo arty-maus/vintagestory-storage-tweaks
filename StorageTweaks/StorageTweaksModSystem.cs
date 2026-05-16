@@ -327,20 +327,23 @@ public class StorageTweaksModSystem : ModSystem
         // Examples: ItemSlotBagContentWithWildcardMatch, ItemSlotTakeOutOnly
         slots = slots.Where(slot => !IsExcludedSlot(slot)).ToList();
 
+        // Clone inventory into DummySlots so all changes are made on the clone
+        var clonedSlots = slots.Select(s => new DummySlot(s.Itemstack?.Clone())).ToList();
+
         // Compact stacks
-        for (var i = 0; i < slots.Count; i++)
+        for (var i = 0; i < clonedSlots.Count; i++)
         {
-            var sourceSlot = slots[i];
+            var sourceSlot = clonedSlots[i];
             if (sourceSlot.Empty) continue;
 
             var stack = sourceSlot.Itemstack;
 
             // Try to merge this stack into every other suitable slot
-            for (var j = 0; j < slots.Count; j++)
+            for (var j = 0; j < clonedSlots.Count; j++)
             {
                 if (i == j) continue; // Don't merge into itself
 
-                var targetSlot = slots[j];
+                var targetSlot = clonedSlots[j];
                 if (targetSlot.Empty) continue;
 
                 sourceSlot.TryPutInto(world, targetSlot, stack.StackSize);
@@ -348,7 +351,7 @@ public class StorageTweaksModSystem : ModSystem
             }
         }
 
-        var itemStacks = slots.Where(s => !s.Empty).Select(x =>
+        var itemStacks = clonedSlots.Where(s => !s.Empty).Select(x =>
         {
             Debug.Assert(x.Itemstack != null);
             return x.TakeOutWhole();
@@ -360,7 +363,6 @@ public class StorageTweaksModSystem : ModSystem
             var classComparison = string.Compare(a.Collectible.Class, b.Collectible.Class, StringComparison.Ordinal);
             if (classComparison != 0) return classComparison;
 
-
             var codeComparison = a.Collectible.Code.CompareTo(b.Collectible.Code);
             if (codeComparison != 0) return codeComparison;
 
@@ -371,35 +373,17 @@ public class StorageTweaksModSystem : ModSystem
             return contentsComparison != 0 ? contentsComparison : b.StackSize.CompareTo(a.StackSize);
         });
 
-        var skippedSlots = new List<ItemSlot>();
-        // store the sorted stacks
+        // Fill cloned slots sequentially with sorted stacks
+        var fillIndex = 0;
         foreach (var stack in itemStacks)
+            clonedSlots[fillIndex++].Itemstack = stack;
+
+        // Hotswap: apply final cloned state to actual inventory slots
+        for (var i = 0; i < slots.Count; i++)
         {
-            skippedSlots.Clear();
-            var sourceSlot = new DummySlot(stack);
-            while (!sourceSlot.Empty && sourceSlot.Itemstack?.StackSize != 0)
-            {
-                var op = new ItemStackMoveOperation(world, EnumMouseButton.Left, 0, EnumMergePriority.AutoMerge,
-                    stack.StackSize);
-                var weightedSlot = inventory.GetBestSuitedSlot(sourceSlot,
-                    null, skippedSlots);
-                if (weightedSlot.slot == null) throw new Exception("Failed to find a target slot to store stack");
-
-                skippedSlots.Add(weightedSlot.slot);
-                if (IsExcludedSlot(weightedSlot.slot))
-                {
-                    world.Logger.Warning("Got best suited slot that is excluded: {0}",
-                        weightedSlot.slot.GetType().Name);
-                    continue;
-                }
-
-                sourceSlot.TryPutInto(weightedSlot.slot, ref op);
-            }
+            slots[i].Itemstack = clonedSlots[i].Itemstack;
+            slots[i].MarkDirty();
         }
-
-        foreach (var slot in slots)
-            if (slot.Empty)
-                slot.MarkDirty();
     }
 
     private static bool IsExcludedSlot(ItemSlot slot)
