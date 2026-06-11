@@ -141,7 +141,7 @@ public class StorageTweaksModSystem : ModSystem
             .RegisterMessageType<UnloadInventoryPacket>()
             .RegisterMessageType<UpdateFavoritesPacket>()
             .RegisterMessageType<QuickStoreNearbyContainersPacket>()
-            .SetMessageHandler<SortInventoryPacket>(HandleSortInventory)
+            .SetMessageHandler<SortInventoryPacket>(SortSystem.HandleSortInventory)
             .SetMessageHandler<UnloadInventoryPacket>(HandleUnloadInventory)
             .SetMessageHandler<UpdateFavoritesPacket>(HandleUpdateFavorites)
             .SetMessageHandler<QuickStoreNearbyContainersPacket>(QuickStoreNearbyContainerSystem
@@ -228,14 +228,6 @@ public class StorageTweaksModSystem : ModSystem
         }
 
         api.World.Logger.Debug("[StorageTweaks] Populated {0} tool and food codes.", ToolAndFoodCodes.Count);
-    }
-
-    private static void HandleSortInventory(IServerPlayer fromPlayer, SortInventoryPacket packet)
-    {
-        var inventory = fromPlayer.InventoryManager.GetInventory(packet.InventoryId);
-        if (inventory == null) return;
-
-        SortInventoryInternal(fromPlayer.Entity.World, inventory);
     }
 
     private static void HandleUpdateFavorites(IServerPlayer fromPlayer, UpdateFavoritesPacket packet)
@@ -338,106 +330,7 @@ public class StorageTweaksModSystem : ModSystem
         }
     }
 
-    private static void SortInventoryInternal(IWorldAccessor world, IInventory inventory)
-    {
-        // we should probably add checks if the player is allowed to access the inventory
-
-        var slots = inventory.ToList();
-
-        // Excludes specialized bag slots from sorting,
-        // for example, Quivers And Sheaths item slots
-        // Examples: ItemSlotBagContentWithWildcardMatch, ItemSlotTakeOutOnly
-        slots = slots.Where(slot => !IsExcludedSlot(slot)).ToList();
-
-        // Clone inventory for rollback on failure
-        var backup = slots.Select(s => s.Itemstack?.Clone()).ToList();
-
-        try
-        {
-            // Compact stacks
-            for (var i = 0; i < slots.Count; i++)
-            {
-                var sourceSlot = slots[i];
-                if (sourceSlot.Empty) continue;
-
-                var stack = sourceSlot.Itemstack;
-
-                // Try to merge this stack into every other suitable slot
-                for (var j = 0; j < slots.Count; j++)
-                {
-                    if (i == j) continue; // Don't merge into itself
-
-                    var targetSlot = slots[j];
-                    if (targetSlot.Empty) continue;
-
-                    sourceSlot.TryPutInto(world, targetSlot, stack.StackSize);
-                    if (sourceSlot.Empty) break;
-                }
-            }
-
-            var itemStacks = slots.Where(s => !s.Empty).Select(x => x.TakeOutWhole()).ToList();
-
-            // Sort by Class, Code, Contents and StackSize
-            itemStacks.Sort((a, b) =>
-            {
-                var classComparison =
-                    string.Compare(a.Collectible.Class, b.Collectible.Class, StringComparison.Ordinal);
-                if (classComparison != 0) return classComparison;
-
-                var codeComparison = a.Collectible.Code.CompareTo(b.Collectible.Code);
-                if (codeComparison != 0) return codeComparison;
-
-                var contentsA = a.Attributes.GetTreeAttribute("contents")?.ToJsonToken() ?? "";
-                var contentsB = b.Attributes.GetTreeAttribute("contents")?.ToJsonToken() ?? "";
-                var contentsComparison = string.Compare(contentsA, contentsB, StringComparison.Ordinal);
-
-                return contentsComparison != 0 ? contentsComparison : b.StackSize.CompareTo(a.StackSize);
-            });
-
-            var skippedSlots = new List<ItemSlot>();
-            // store the sorted stacks
-            foreach (var stack in itemStacks)
-            {
-                skippedSlots.Clear();
-                var sourceSlot = new DummySlot(stack);
-                while (!sourceSlot.Empty && sourceSlot.Itemstack?.StackSize != 0)
-                {
-                    var op = new ItemStackMoveOperation(world, EnumMouseButton.Left, 0, EnumMergePriority.AutoMerge,
-                        stack.StackSize);
-                    var weightedSlot = inventory.GetBestSuitedSlot(sourceSlot,
-                        null, skippedSlots);
-                    if (weightedSlot.slot == null) throw new Exception("Failed to find a target slot to store stack");
-
-                    skippedSlots.Add(weightedSlot.slot);
-                    if (IsExcludedSlot(weightedSlot.slot))
-                    {
-                        world.Logger.Warning("Got best suited slot that is excluded: {0}",
-                            weightedSlot.slot.GetType().Name);
-                        continue;
-                    }
-
-                    sourceSlot.TryPutInto(weightedSlot.slot, ref op);
-                }
-            }
-
-
-            foreach (var slot in slots)
-                slot.MarkDirty();
-        }
-        catch (Exception e)
-        {
-            // Restore from backup on failure
-            for (var i = 0; i < slots.Count; i++)
-            {
-                slots[i].Itemstack = backup[i];
-                slots[i].MarkDirty();
-            }
-
-            world.Logger.Fatal($"[StorageTweaks] Error in sort inventory: {e}");
-        }
-    }
-
-    private static bool IsExcludedSlot(ItemSlot slot)
+    public static bool IsExcludedSlot(ItemSlot slot)
     {
         return !SlotTypes.Contains(slot.GetType().Name);
     }
