@@ -1,0 +1,142 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Vintagestory.API.Common;
+using Vintagestory.API.Config;
+using Vintagestory.API.Server;
+
+namespace StorageTweaks;
+
+public abstract record SortResult;
+
+public record SortError(string Message) : SortResult;
+
+public record SortSuccess : SortResult;
+
+public static class SortSystem
+{
+    public static void HandleSortInventory(IServerPlayer fromPlayer, SortInventoryPacket packet)
+    {
+        var inventory = fromPlayer.InventoryManager.GetInventory(packet.InventoryId);
+        if (inventory == null) return;
+        var world = fromPlayer.Entity.World;
+
+        // Clone inventory for rollback on failure
+        var snapshot = inventory.Select(s => s.Itemstack?.Clone()).ToList();
+
+        var result = SortInventoryInternal(world, inventory);
+        if (result is not SortError sortError) return;
+        world.Logger.Fatal($"[StorageTweaks] Error in sort inventory: {sortError.Message}");
+        world.Logger.Debug("[StorageTweaks] Attempting to rollback inventory");
+
+        // crash if slots were somehow lost
+        if (snapshot.Count != inventory.Count)
+        {
+            throw new Exception(
+                $"[StorageTweaks] failed to restore inventory. Slot count mismatch. Snapshot slot count: {snapshot.Count}, inventory count: {inventory.Count}");
+        }
+
+        for (var i = 0; i < snapshot.Count; i++)
+        {
+            inventory[i].Itemstack = snapshot[i];
+            inventory[i].MarkDirty();
+        }
+
+        world.Logger.Debug("[StorageTweaks] Finished rolling back inventory");
+
+        const string message = "[StorageTweaks] Failed to sort inventory, inventory rolled back to previous state. Check server logs."; 
+        fromPlayer.SendIngameError("storagetweaks:rollback", message);
+        fromPlayer.SendMessage(GlobalConstants.InfoLogChatGroup, $"<font color=\"#ffea00\">{message}</font>", EnumChatType.CommandError);
+    }
+
+    private static SortResult SortInventoryInternal(IWorldAccessor world, IInventory inventory)
+    {
+        // we should probably add checks if the player is allowed to access the inventory
+
+        var slots = inventory.ToList();
+
+        // Excludes specialized bag slots from sorting,
+        // for example, Quivers And Sheaths item slots
+        // Examples: ItemSlotBagContentWithWildcardMatch, ItemSlotTakeOutOnly
+        slots = slots.Where(slot => !StorageTweaksModSystem.IsExcludedSlot(slot) && !slot.Empty).ToList();
+
+        try
+        {
+            // Compact stacks
+            for (var i = 0; i < slots.Count; i++)
+            {
+                var sourceSlot = slots[i];
+
+                var stack = sourceSlot.Itemstack;
+
+                // Try to merge this stack into every other suitable slot
+                for (var j = 0; j < slots.Count; j++)
+                {
+                    if (i == j) continue; // Don't merge into itself
+
+                    var targetSlot = slots[j];
+                    if (targetSlot.Empty) continue;
+
+                    sourceSlot.TryPutInto(world, targetSlot, stack.StackSize);
+                    if (sourceSlot.Empty) break;
+                }
+            }
+
+            // take out all stacks
+            var itemStacks = slots.Where(s => !s.Empty).Select(x => x.TakeOutWhole()).ToList();
+
+            // Sort by Class, Code, Contents and StackSize
+            itemStacks.Sort((a, b) =>
+            {
+                var classComparison =
+                    string.Compare(a.Collectible.Class, b.Collectible.Class, StringComparison.Ordinal);
+                if (classComparison != 0) return classComparison;
+
+                var codeComparison = a.Collectible.Code.CompareTo(b.Collectible.Code);
+                if (codeComparison != 0) return codeComparison;
+
+                var contentsA = a.Attributes.GetTreeAttribute("contents")?.ToJsonToken() ?? "";
+                var contentsB = b.Attributes.GetTreeAttribute("contents")?.ToJsonToken() ?? "";
+                var contentsComparison = string.Compare(contentsA, contentsB, StringComparison.Ordinal);
+
+                return contentsComparison != 0 ? contentsComparison : b.StackSize.CompareTo(a.StackSize);
+            });
+
+            var skippedSlots = new List<ItemSlot>();
+            // store the sorted stacks
+            foreach (var stack in itemStacks)
+            {
+                skippedSlots.Clear();
+                var sourceSlot = new DummySlot(stack);
+                while (!sourceSlot.Empty && sourceSlot.Itemstack?.StackSize != 0)
+                {
+                    var op = new ItemStackMoveOperation(world, EnumMouseButton.Left, 0, EnumMergePriority.AutoMerge,
+                        stack.StackSize);
+                    var weightedSlot = inventory.GetBestSuitedSlot(sourceSlot,
+                        null, skippedSlots);
+                    if (weightedSlot.slot == null) return new SortError("Failed to find a target slot to store stack");
+
+                    skippedSlots.Add(weightedSlot.slot);
+                    if (StorageTweaksModSystem.IsExcludedSlot(weightedSlot.slot))
+                    {
+                        world.Logger.Warning("Got best suited slot that is excluded: {0}",
+                            weightedSlot.slot.GetType().Name);
+                        continue;
+                    }
+
+                    sourceSlot.TryPutInto(weightedSlot.slot, ref op);
+                }
+            }
+
+
+            foreach (var slot in slots)
+                slot.MarkDirty();
+        }
+        catch (Exception e)
+        {
+            return new SortError($"Exception thrown while sorting: {e}");
+        }
+
+        return new SortSuccess();
+    }
+}
