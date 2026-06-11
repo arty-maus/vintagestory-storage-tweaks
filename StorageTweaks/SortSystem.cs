@@ -44,9 +44,11 @@ public static class SortSystem
 
         world.Logger.Debug("[StorageTweaks] Finished rolling back inventory");
 
-        const string message = "[StorageTweaks] Failed to sort inventory, inventory rolled back to previous state. Check server logs."; 
+        const string message =
+            "[StorageTweaks] Failed to sort inventory, inventory rolled back to previous state. Check server logs.";
         fromPlayer.SendIngameError("storagetweaks:rollback", message);
-        fromPlayer.SendMessage(GlobalConstants.InfoLogChatGroup, $"<font color=\"#ffea00\">{message}</font>", EnumChatType.CommandError);
+        fromPlayer.SendMessage(GlobalConstants.InfoLogChatGroup, $"<font color=\"#ffea00\">{message}</font>",
+            EnumChatType.CommandError);
     }
 
     private static SortResult SortInventoryInternal(IWorldAccessor world, IInventory inventory, bool stackPerishables)

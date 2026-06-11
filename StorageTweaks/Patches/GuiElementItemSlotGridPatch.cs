@@ -156,19 +156,22 @@ public class GuiElementItemSlotGridPatch
 
     private static FavoritesManager? GetFavoritesManager(GuiElementItemSlotGridBase instance, string context)
     {
-        var capi = GetApi(instance); 
+        var capi = GetApi(instance);
         var modSystem = capi.ModLoader.GetModSystem<StorageTweaksModSystem>();
         if (modSystem == null)
         {
-            capi.Logger.Warning("[StorageTweaks] Failed to get StorageTweaksModSystem in GuiElementItemSlotGridPatch::{0}", context);
+            capi.Logger.Warning(
+                "[StorageTweaks] Failed to get StorageTweaksModSystem in GuiElementItemSlotGridPatch::{0}", context);
             return null;
         }
 
         var favoritesManager = modSystem.FavoritesManager;
         if (favoritesManager == null)
         {
-            capi.Logger.Warning("[StorageTweaks] Failed to get favorites manager in  GuiElementItemSlotGridPatch::{0}", context);
+            capi.Logger.Warning("[StorageTweaks] Failed to get favorites manager in  GuiElementItemSlotGridPatch::{0}",
+                context);
         }
+
         return favoritesManager;
     }
 }

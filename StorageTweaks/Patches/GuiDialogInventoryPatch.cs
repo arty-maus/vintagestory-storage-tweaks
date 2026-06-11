@@ -61,18 +61,25 @@ public class GuiDialogInventoryPatch
         var capi = GetApi(__instance);
         capi.Logger.Debug("[StorageTweaks] ComposeSurvivalInvDialog: {0}", __instance.GetType().Name);
         var composer = GetGuiComposer(__instance);
-        if (composer == null) {
+        if (composer == null)
+        {
             capi.Logger.Warning("[StorageTweaks] Failed to find GuiComposer in ComposeSurvivalInvDialog");
             return;
         }
 
-        var storageTweaksKeys = new[] { "storagetweaks-sort", "storagetweaks-store-nearby", "storagetweaks-favorite", "storagetweaks-stack-perishables" };
+        var storageTweaksKeys = new[]
+        {
+            "storagetweaks-sort", "storagetweaks-store-nearby", "storagetweaks-favorite",
+            "storagetweaks-stack-perishables"
+        };
         if (storageTweaksKeys.Any(key => composer[key] != null)) return;
         var modSystem = capi.ModLoader.GetModSystem<StorageTweaksModSystem>();
-        if (modSystem == null) {
+        if (modSystem == null)
+        {
             capi.Logger.Warning("[StorageTweaks] Failed to get StorageTweaksModSystem in ComposeSurvivalInvDialog");
             return;
         }
+
         modSystem.InventoryActionButtons!.ComposeGui(composer);
     }
 

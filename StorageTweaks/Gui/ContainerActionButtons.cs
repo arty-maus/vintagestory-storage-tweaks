@@ -1,4 +1,3 @@
-using System;
 using StorageTweaks.Patches;
 using Vintagestory.API.Client;
 using Vintagestory.API.Config;

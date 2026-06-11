@@ -15,7 +15,8 @@ public static class PatchUtils
     private static readonly FieldInfo GuiDialogCreatureContentsInv =
         AccessTools.Field(typeof(GuiDialogCreatureContents), "inv");
 
-    public static void AddButton(GuiComposer composer, string type, int xOffset, Action<IInventory> onClick, string hoverText)
+    public static void AddButton(GuiComposer composer, string type, int xOffset, Action<IInventory> onClick,
+        string hoverText)
     {
         var capi = composer.Api;
         var iconAsset = new AssetLocation("storagetweaks", $"textures/icons/{type}.svg");

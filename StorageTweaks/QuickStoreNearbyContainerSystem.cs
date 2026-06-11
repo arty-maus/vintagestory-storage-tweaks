@@ -61,7 +61,7 @@ public static class QuickStoreNearbyContainerSystem
         ("chest", "longcrate"),
         ("chest", "linencrate"),
         ("chest", "foodcupboardwall"),
-        
+
         // Purposeful Storage mod
         ("pantsrack", "pantsrack"),
         ("necklacestand", "necklacestand"),
