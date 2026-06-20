@@ -83,6 +83,44 @@ public static class QuickStoreNearbyContainerSystem
         ("resourcebin", "resourcebin"),
         ("spearrack", "spearrack"),
         ("glidermount", "glidermount"),
+
+        // Food Shelves mod — shelves & display
+        ("doubleshelf", "doubleshelf"),
+        ("breadshelf", "breadshelf"),
+        ("barshelf", "barshelf"),
+        ("eggshelf", "eggshelf"),
+        ("pieshelf", "pieshelf"),
+        ("seedshelf", "seedshelf"),
+        ("sushishelf", "sushishelf"),
+        ("tablewshelf", "tablewshelf"),
+        ("fooddisplaycase", "fooddisplaycase"),
+        ("fooddisplayblock", "fooddisplayblock"),
+        ("pumpkincase", "pumpkincase"),
+
+        // Food Shelves mod — specialty storage
+        ("floursack", "floursack"),
+        ("jar", "jar"),
+        ("jarlarge", "jarlarge"),
+        ("jarstand", "jarstand"),
+        ("ceilingrack", "ceilingrack"),
+        ("seedbins", "seedbins"),
+        ("buckethook", "buckethook"),
+
+        // Food Shelves mod — coolers
+        ("coolingcabinet", "coolingcabinet"),
+        ("meatfreezer", "meatfreezer"),
+        ("fruitcooler", "fruitcooler"),
+        ("wallcabinet", "wallcabinet"),
+
+        // Food Shelves mod — baskets
+        ("fruitbasket", "fruitbasket"),
+        ("vegetablebasket", "vegetablebasket"),
+        ("eggbasket", "eggbasket"),
+        ("mushroombasket", "mushroombasket"),
+
+        // Food Shelves mod — barrel/tun racks
+        ("barrelrack", "barrelrack"),
+        ("tunrack", "tunrack"),
     ];
 
     private static List<BlockEntityContainer> GetNearbyContainers(IWorldAccessor world, BlockPos position,
