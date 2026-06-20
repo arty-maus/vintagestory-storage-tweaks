@@ -46,6 +46,126 @@ public class UpdateFavoritesPacket
     [ProtoMember(2)] public bool IsFavorite;
 }
 
+public class ContainerEntry
+{
+    public string InventoryClass { get; set; } = "";
+    public string Type { get; set; } = "";
+}
+
+public class StorageTweaksServerConfig
+{
+    public List<ContainerEntry> QuickStoreContainers { get; set; } =
+    [
+        // vanilla baskets
+        new() { InventoryClass = "basket", Type = "reed" },
+        new() { InventoryClass = "basket", Type = "papyrus" },
+        new() { InventoryClass = "basket", Type = "aged" },
+
+        // vanilla chests
+        new() { InventoryClass = "chest", Type = "normal-labeled" },
+        new() { InventoryClass = "chest", Type = "normal-generic" },
+        new() { InventoryClass = "chest", Type = "normal" },
+        new() { InventoryClass = "chest", Type = "normal-aged" },
+
+        // vanilla crates
+        new() { InventoryClass = "crate", Type = "crate" },
+
+        // String Sense mod containers
+        new() { InventoryClass = "basket", Type = "bark" },
+        new() { InventoryClass = "basket", Type = "vine" },
+        new() { InventoryClass = "basket", Type = "mixed" },
+        new() { InventoryClass = "basket", Type = "flax" },
+        new() { InventoryClass = "basket", Type = "straw" },
+
+        // Better Crates mod containers
+        new() { InventoryClass = "bettercrate", Type = "bettercrate2sided" },
+        new() { InventoryClass = "bettercrate", Type = "bettercrate" },
+
+        // Extra Chests mod
+        new() { InventoryClass = "chest", Type = "blackbronze" },
+        new() { InventoryClass = "chest", Type = "iron" },
+        new() { InventoryClass = "chest", Type = "bismuthbronze" },
+        new() { InventoryClass = "chest", Type = "steel" },
+        new() { InventoryClass = "chest", Type = "tinbronze" },
+        new() { InventoryClass = "chest", Type = "copper" },
+
+        // Containers Bundle mod
+        new() { InventoryClass = "chest", Type = "strongbox" },
+        new() { InventoryClass = "chest", Type = "metalcabinetnolabel" },
+        new() { InventoryClass = "chest", Type = "bamboochest" },
+        new() { InventoryClass = "chest", Type = "cupboardnolabel" },
+        new() { InventoryClass = "chest", Type = "stonecasket" },
+        new() { InventoryClass = "chest", Type = "cupboardwithlabel" },
+        new() { InventoryClass = "chest", Type = "woodenbox" },
+        new() { InventoryClass = "chest", Type = "exquisitechest" },
+        new() { InventoryClass = "chest", Type = "wickerbasket" },
+        new() { InventoryClass = "chest", Type = "foodcupboard" },
+        new() { InventoryClass = "chest", Type = "longcrate" },
+        new() { InventoryClass = "chest", Type = "linencrate" },
+        new() { InventoryClass = "chest", Type = "foodcupboardwall" },
+
+        // Purposeful Storage mod
+        new() { InventoryClass = "pantsrack", Type = "pantsrack" },
+        new() { InventoryClass = "necklacestand", Type = "necklacestand" },
+        new() { InventoryClass = "shoerack", Type = "shoerack" },
+        new() { InventoryClass = "hatrack", Type = "hatrack" },
+        new() { InventoryClass = "wardrobe", Type = "wardrobe" },
+        new() { InventoryClass = "swordpedestal", Type = "swordpedestal" },
+        new() { InventoryClass = "gloverack", Type = "gloverack" },
+        new() { InventoryClass = "blanketrack", Type = "blanketrack" },
+        new() { InventoryClass = "weaponrack", Type = "weaponrack" },
+        new() { InventoryClass = "belthooks", Type = "belthooks" },
+        new() { InventoryClass = "butterflydisplaypanel", Type = "butterflydisplaypanel" },
+        new() { InventoryClass = "swordplaque", Type = "swordplaque" },
+        new() { InventoryClass = "gearrack", Type = "gearrack" },
+        new() { InventoryClass = "medallionrack", Type = "medallionrack" },
+        new() { InventoryClass = "saddlerack", Type = "saddlerack" },
+        new() { InventoryClass = "schematicrack", Type = "schematicrack" },
+        new() { InventoryClass = "tuningcylinderrack", Type = "tuningcylinderrack" },
+        new() { InventoryClass = "resourcebin", Type = "resourcebin" },
+        new() { InventoryClass = "spearrack", Type = "spearrack" },
+        new() { InventoryClass = "glidermount", Type = "glidermount" },
+
+        // Food Shelves mod — shelves & display
+        new() { InventoryClass = "doubleshelf", Type = "doubleshelf" },
+        new() { InventoryClass = "breadshelf", Type = "breadshelf" },
+        new() { InventoryClass = "barshelf", Type = "barshelf" },
+        new() { InventoryClass = "eggshelf", Type = "eggshelf" },
+        new() { InventoryClass = "pieshelf", Type = "pieshelf" },
+        new() { InventoryClass = "seedshelf", Type = "seedshelf" },
+        new() { InventoryClass = "sushishelf", Type = "sushishelf" },
+        new() { InventoryClass = "tablewshelf", Type = "tablewshelf" },
+        new() { InventoryClass = "fooddisplaycase", Type = "fooddisplaycase" },
+        new() { InventoryClass = "fooddisplayblock", Type = "fooddisplayblock" },
+        new() { InventoryClass = "pumpkincase", Type = "pumpkincase" },
+
+        // Food Shelves mod — specialty storage
+        new() { InventoryClass = "floursack", Type = "floursack" },
+        new() { InventoryClass = "jar", Type = "jar" },
+        new() { InventoryClass = "jarlarge", Type = "jarlarge" },
+        new() { InventoryClass = "jarstand", Type = "jarstand" },
+        new() { InventoryClass = "ceilingrack", Type = "ceilingrack" },
+        new() { InventoryClass = "seedbins", Type = "seedbins" },
+        new() { InventoryClass = "buckethook", Type = "buckethook" },
+
+        // Food Shelves mod — coolers
+        new() { InventoryClass = "coolingcabinet", Type = "coolingcabinet" },
+        new() { InventoryClass = "meatfreezer", Type = "meatfreezer" },
+        new() { InventoryClass = "fruitcooler", Type = "fruitcooler" },
+        new() { InventoryClass = "wallcabinet", Type = "wallcabinet" },
+
+        // Food Shelves mod — baskets
+        new() { InventoryClass = "fruitbasket", Type = "fruitbasket" },
+        new() { InventoryClass = "vegetablebasket", Type = "vegetablebasket" },
+        new() { InventoryClass = "eggbasket", Type = "eggbasket" },
+        new() { InventoryClass = "mushroombasket", Type = "mushroombasket" },
+
+        // Food Shelves mod — barrel/tun racks
+        new() { InventoryClass = "barrelrack", Type = "barrelrack" },
+        new() { InventoryClass = "tunrack", Type = "tunrack" },
+    ];
+}
+
 public class StorageTweaksClientConfig
 {
     public bool HideFavorites { get; set; }
@@ -167,6 +287,9 @@ public class StorageTweaksModSystem : ModSystem
 
         PopulateToolAndFoodCodes(api);
         sapi.Logger.VerboseDebug("[StorageTweaks] Populated tool and food codes");
+
+        LoadServerConfig(api);
+        sapi.Logger.VerboseDebug("[StorageTweaks] Loaded server config");
 
         api.Event.PlayerJoin += OnPlayerJoin;
 
@@ -350,6 +473,27 @@ public class StorageTweaksModSystem : ModSystem
     public static bool IsExcludedSlot(ItemSlot slot)
     {
         return !SlotTypes.Contains(slot.GetType().Name);
+    }
+
+    private static void LoadServerConfig(ICoreServerAPI api)
+    {
+        StorageTweaksServerConfig? serverConfig;
+        try
+        {
+            serverConfig = api.LoadModConfig<StorageTweaksServerConfig>("storagetweaks-server.json");
+            if (serverConfig == null)
+            {
+                serverConfig = new StorageTweaksServerConfig();
+                api.StoreModConfig(serverConfig, "storagetweaks-server.json");
+            }
+        }
+        catch (Exception)
+        {
+            serverConfig = new StorageTweaksServerConfig();
+            api.StoreModConfig(serverConfig, "storagetweaks-server.json");
+        }
+
+        QuickStoreNearbyContainerSystem.Initialize(serverConfig.QuickStoreContainers);
     }
 
     private static void LoadClientConfig(ICoreAPI api)

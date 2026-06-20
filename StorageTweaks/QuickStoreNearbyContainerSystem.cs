@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
@@ -11,117 +12,12 @@ public static class QuickStoreNearbyContainerSystem
 {
     private const int SearchRadius = 8;
 
-    // Chest types to include when looking for nearby chests to quick deposit matching items from inventory
-    private static readonly HashSet<(string, string)> QuickStackChestTypes =
-    [
-        // vanilla baskets
-        ("basket", "reed"),
-        ("basket", "papyrus"),
-        ("basket", "aged"),
+    private static HashSet<(string, string)> _quickStackChestTypes = [];
 
-        // vanilla chests
-        ("chest", "normal-labeled"),
-        ("chest", "normal-generic"),
-        ("chest", "normal"),
-        ("chest", "normal-aged"),
-
-        // vanilla crates
-        ("crate", "crate"),
-
-        // String Sense mod containers
-        ("basket", "bark"),
-        ("basket", "vine"),
-        ("basket", "mixed"),
-        ("basket", "flax"),
-        ("basket", "straw"),
-
-        // Better Crates mod containers
-        ("bettercrate", "bettercrate2sided"),
-        ("bettercrate", "bettercrate"),
-
-        // Extra Chests mod
-        ("chest", "blackbronze"),
-        ("chest", "iron"),
-        ("chest", "bismuthbronze"),
-        ("chest", "steel"),
-        ("chest", "tinbronze"),
-        ("chest", "copper"),
-
-        // Containers Bundle mod
-        ("chest", "strongbox"),
-        ("chest", "metalcabinetnolabel"),
-        ("chest", "bamboochest"),
-        ("chest", "cupboardnolabel"),
-        ("chest", "stonecasket"),
-        ("chest", "cupboardwithlabel"),
-        ("chest", "woodenbox"),
-        ("chest", "exquisitechest"),
-        ("chest", "wickerbasket"),
-        ("chest", "foodcupboard"),
-        ("chest", "longcrate"),
-        ("chest", "linencrate"),
-        ("chest", "foodcupboardwall"),
-
-        // Purposeful Storage mod
-        ("pantsrack", "pantsrack"),
-        ("necklacestand", "necklacestand"),
-        ("shoerack", "shoerack"),
-        ("hatrack", "hatrack"),
-        ("wardrobe", "wardrobe"),
-        ("swordpedestal", "swordpedestal"),
-        ("gloverack", "gloverack"),
-        ("blanketrack", "blanketrack"),
-        ("weaponrack", "weaponrack"),
-        ("belthooks", "belthooks"),
-        ("butterflydisplaypanel", "butterflydisplaypanel"),
-        ("swordplaque", "swordplaque"),
-        ("gearrack", "gearrack"),
-        ("medallionrack", "medallionrack"),
-        ("saddlerack", "saddlerack"),
-        ("schematicrack", "schematicrack"),
-        ("tuningcylinderrack", "tuningcylinderrack"),
-        ("resourcebin", "resourcebin"),
-        ("spearrack", "spearrack"),
-        ("glidermount", "glidermount"),
-
-        // Food Shelves mod — shelves & display
-        ("doubleshelf", "doubleshelf"),
-        ("breadshelf", "breadshelf"),
-        ("barshelf", "barshelf"),
-        ("eggshelf", "eggshelf"),
-        ("pieshelf", "pieshelf"),
-        ("seedshelf", "seedshelf"),
-        ("sushishelf", "sushishelf"),
-        ("tablewshelf", "tablewshelf"),
-        ("fooddisplaycase", "fooddisplaycase"),
-        ("fooddisplayblock", "fooddisplayblock"),
-        ("pumpkincase", "pumpkincase"),
-
-        // Food Shelves mod — specialty storage
-        ("floursack", "floursack"),
-        ("jar", "jar"),
-        ("jarlarge", "jarlarge"),
-        ("jarstand", "jarstand"),
-        ("ceilingrack", "ceilingrack"),
-        ("seedbins", "seedbins"),
-        ("buckethook", "buckethook"),
-
-        // Food Shelves mod — coolers
-        ("coolingcabinet", "coolingcabinet"),
-        ("meatfreezer", "meatfreezer"),
-        ("fruitcooler", "fruitcooler"),
-        ("wallcabinet", "wallcabinet"),
-
-        // Food Shelves mod — baskets
-        ("fruitbasket", "fruitbasket"),
-        ("vegetablebasket", "vegetablebasket"),
-        ("eggbasket", "eggbasket"),
-        ("mushroombasket", "mushroombasket"),
-
-        // Food Shelves mod — barrel/tun racks
-        ("barrelrack", "barrelrack"),
-        ("tunrack", "tunrack"),
-    ];
+    public static void Initialize(IEnumerable<ContainerEntry> entries)
+    {
+        _quickStackChestTypes = entries.Select(e => (e.InventoryClass, e.Type)).ToHashSet();
+    }
 
     private static List<BlockEntityContainer> GetNearbyContainers(IWorldAccessor world, BlockPos position,
         int radius)
@@ -135,7 +31,7 @@ public static class QuickStoreNearbyContainerSystem
 
             if (be is BlockEntityGenericTypedContainer container)
             {
-                if (!QuickStackChestTypes.Contains((container.InventoryClassName, container.type)))
+                if (!_quickStackChestTypes.Contains((container.InventoryClassName, container.type)))
                 {
                     world.Logger.Debug(
                         $"[StorageTweaks] Skipped typed container for quick store nearby since it is not in the white list: (\"{container.inventoryClassName}\", \"{container.type}\")");
@@ -147,7 +43,7 @@ public static class QuickStoreNearbyContainerSystem
             }
 
             if (be is not BlockEntityContainer bc) return;
-            if (!QuickStackChestTypes.Contains((bc.InventoryClassName,
+            if (!_quickStackChestTypes.Contains((bc.InventoryClassName,
                     bc.Block.Code.FirstCodePart())))
             {
                 world.Logger.Debug(
