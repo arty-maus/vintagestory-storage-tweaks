@@ -42,7 +42,10 @@ public static class QuickStoreNearbyContainerSystem
                 return;
             }
 
-            if (be is not BlockEntityContainer bc) return;
+            if (be is not BlockEntityContainer bc)
+            {
+                return;
+            }
             if (!_quickStackChestTypes.Contains((bc.InventoryClassName,
                     bc.Block.Code.FirstCodePart())))
             {
