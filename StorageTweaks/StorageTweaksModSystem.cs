@@ -360,7 +360,10 @@ public class StorageTweaksModSystem : ModSystem
                     var fallbackIgnored = new HashSet<ItemSlot>();
                     foreach (var destSlot in destInventory)
                     {
-                        if (fallbackIgnored.Contains(destSlot)) continue;
+                        if (fallbackIgnored.Contains(destSlot))
+                        {
+                            continue;
+                        }
                         var canHold = destSlot.CanHold(slot);
                         Logger().Debug("[StorageTweaks]     destSlot={0} empty={1} canHold={2} destQty={3} destMax={4}",
                             destSlot.GetType().Name, destSlot.Empty, canHold,
@@ -374,32 +377,10 @@ public class StorageTweaksModSystem : ModSystem
                             EnumMergePriority.DirectMerge, slot.StackSize);
                         slot.TryPutInto(destSlot, ref directOp);
                         Logger().Debug("[StorageTweaks]     DirectMerge moved={0} slotEmpty={1}", directOp.MovedQuantity, slot.Empty);
-                        if (directOp.MovedQuantity == 0)
+                        if (slot.Empty)
                         {
-                            // Custom slot types (e.g. FoodShelves ItemSlotFSUniversal) re-check
-                            // freshness inside TryPutInto regardless of merge priority. If there
-                            // is room and the stacks are content-equal (ignoring transition state),
-                            // merge stacks directly. Collectible-only equality is not enough —
-                            // empty and filled bowls/crocks share a Collectible but differ in
-                            // content attributes and must not be merged.
-                            var room = destSlot.MaxSlotStackSize - (destSlot.Itemstack?.StackSize ?? 0);
-                            if (room > 0 && !destSlot.Empty &&
-                                destSlot.Itemstack!.Equals(world, slot.Itemstack, GlobalConstants.IgnoredStackAttributes))
-                            {
-                                var toMove = Math.Min(slot.StackSize, room);
-                                destSlot.Itemstack.StackSize += toMove;
-                                slot.Itemstack.StackSize -= toMove;
-                                if (slot.Itemstack.StackSize <= 0) slot.Itemstack = null;
-                                destSlot.MarkDirty();
-                                slot.MarkDirty();
-                                Logger().Debug("[StorageTweaks]     Direct stack merge moved={0}", toMove);
-                            }
-                            else
-                            {
-                                fallbackIgnored.Add(destSlot);
-                            }
+                            break;
                         }
-                        if (slot.Empty) break;
                     }
                     break;
                 }
