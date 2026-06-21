@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using HarmonyLib;
 using ProtoBuf;
@@ -79,7 +80,7 @@ public class StorageTweaksModSystem : ModSystem
     public ContainerActionButtons? ContainerActionButtons;
     public FavoritesManager? FavoritesManager;
 
-    private static readonly string[] SlotTypes =
+    private readonly static string[] SlotTypes =
     [
         "ItemSlotSurvival",
         "ItemSlotBagContent",
@@ -95,7 +96,7 @@ public class StorageTweaksModSystem : ModSystem
 
     /// A list of quality foods and tools to exclude from automatic unloading
     // ReSharper disable once MemberCanBePrivate.Global
-    public static readonly List<string> ToolAndFoodCodes = [];
+    public readonly static List<string> ToolAndFoodCodes = [];
 
     private ICoreClientAPI? capi;
     private Harmony? harmony;
@@ -180,10 +181,16 @@ public class StorageTweaksModSystem : ModSystem
     private static void OnPlayerJoin(IServerPlayer player)
     {
         var tree = player.Entity?.WatchedAttributes;
-        if (tree == null) return;
+        if (tree == null)
+        {
+            return;
+        }
 
         var favoritesAttr = tree.GetTreeAttribute(FavoritesManager.FavoritesKey);
-        if (favoritesAttr != null) return;
+        if (favoritesAttr != null)
+        {
+            return;
+        }
 
         favoritesAttr = new TreeAttribute();
         foreach (var code in ToolAndFoodCodes) favoritesAttr.SetBool(code, true);
@@ -229,16 +236,25 @@ public class StorageTweaksModSystem : ModSystem
 
         foreach (var collectible in api.World.Items.Concat(api.World.Collectibles))
         {
-            if (collectible.Code == null) continue;
+            if (collectible.Code == null)
+            {
+                continue;
+            }
 
             var code = collectible.Code.ToString();
             var parts = code.Split(':', '-');
 
             // Check if any part matches a keyword
-            if (!keywords.Any(k => parts.Any(p => string.Equals(p, k, StringComparison.OrdinalIgnoreCase)))) continue;
+            if (!keywords.Any(k => parts.Any(p => string.Equals(p, k, StringComparison.OrdinalIgnoreCase))))
+            {
+                continue;
+            }
 
             // Exclude unwanted items
-            if (excludeKeywords.Any(k => code.Contains(k, StringComparison.OrdinalIgnoreCase))) continue;
+            if (excludeKeywords.Any(k => code.Contains(k, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
 
 
             ToolAndFoodCodes.Add(code);
@@ -250,7 +266,10 @@ public class StorageTweaksModSystem : ModSystem
     private static void HandleUpdateFavorites(IServerPlayer fromPlayer, UpdateFavoritesPacket packet)
     {
         var tree = fromPlayer.Entity?.WatchedAttributes;
-        if (tree == null) return;
+        if (tree == null)
+        {
+            return;
+        }
 
         var favoritesAttr = tree.GetTreeAttribute(FavoritesManager.FavoritesKey);
 
@@ -261,8 +280,14 @@ public class StorageTweaksModSystem : ModSystem
         }
 
 
-        if (packet.IsFavorite) favoritesAttr.SetBool(packet.Code, packet.IsFavorite);
-        else favoritesAttr.RemoveAttribute(packet.Code);
+        if (packet.IsFavorite)
+        {
+            favoritesAttr.SetBool(packet.Code, packet.IsFavorite);
+        }
+        else
+        {
+            favoritesAttr.RemoveAttribute(packet.Code);
+        }
 
         tree.MarkPathDirty(FavoritesManager.FavoritesKey);
     }
@@ -305,42 +330,132 @@ public class StorageTweaksModSystem : ModSystem
         var existingCodes = new HashSet<string>();
         foreach (var destSlot in destInventory)
         {
-            if (destSlot.Empty) continue;
-            if (FavoritesManager.IsFavorite(fromPlayer, destSlot.Itemstack)) continue;
+            if (destSlot.Empty)
+            {
+                continue;
+            }
+            if (FavoritesManager.IsFavorite(fromPlayer, destSlot.Itemstack))
+            {
+                continue;
+            }
 
             existingCodes.Add(destSlot.Itemstack.Collectible.Code.ToString());
         }
 
-        if (existingCodes.Count == 0) return;
+        if (existingCodes.Count == 0)
+        {
+            Logger().Debug("[StorageTweaks] UnloadInventory: no existing codes in dest ({0}), skipping", destInventory.InventoryID);
+            return;
+        }
+
+        Logger().Debug("[StorageTweaks] UnloadInventory: dest={0} class={1} slots={2} existingCodes=[{3}] stackPerishables={4}",
+            destInventory.InventoryID, destInventory.GetType().Name, destInventory.Count,
+            string.Join(",", existingCodes), stackPerishables);
 
         ProcessInventorySlots(playerInv, destInventory, existingCodes, fromPlayer, stackPerishables);
         ProcessInventorySlots(playerHotbar, destInventory, existingCodes, fromPlayer, stackPerishables);
     }
-
+    
+    [SuppressMessage("ReSharper", "SuggestBaseTypeForParameter")]
     private static void ProcessInventorySlots(IInventory sourceInventory, IInventory destInventory,
         HashSet<string> existingCodes, IServerPlayer fromPlayer, bool stackPerishables)
     {
         List<ItemSlot> ignoredSlots = [];
         foreach (var slot in sourceInventory)
         {
-            if (slot.Empty) continue;
-            if (!existingCodes.Contains(slot.Itemstack.Collectible.Code.ToString())) continue;
-            if (IsExcludedSlot(slot)) continue;
+            if (slot.Empty)
+            {
+                continue;
+            }
+            if (!existingCodes.Contains(slot.Itemstack.Collectible.Code.ToString()))
+            {
+                continue;
+            }
+            if (IsExcludedSlot(slot))
+            {
+                continue;
+            }
 
             ignoredSlots.Clear();
             var world = fromPlayer.Entity.World;
             // DirectMerge blends transition state so differently-perished food stacks;
             // AutoMerge (vanilla) refuses to merge stacks with mismatched perish progress.
             var mergePriority = stackPerishables ? EnumMergePriority.DirectMerge : EnumMergePriority.AutoMerge;
+            Logger().Debug("[StorageTweaks] ProcessSlot: item={0} qty={1} mergePriority={2}",
+                slot.Itemstack.Collectible.Code, slot.StackSize, mergePriority);
             while (true)
             {
                 var op = new ItemStackMoveOperation(world, EnumMouseButton.Left, 0, mergePriority,
                     slot.StackSize);
                 var suitedSlot = destInventory.GetBestSuitedSlot(slot, op, ignoredSlots);
-                if (suitedSlot.slot == null || suitedSlot.weight == 0) break;
+                if (suitedSlot.slot == null || suitedSlot.weight == 0)
+                {
+                    Logger().Debug("[StorageTweaks]   GetBestSuitedSlot returned null/0 (ignoredSlots={0}), trying DirectMerge fallback", ignoredSlots.Count);
+                    // GetBestSuitedSlot hardcodes AutoMerge internally, blocking perishable items
+                    // (flour, liquids in FoodShelves) with mismatched transition states. Fall back
+                    // to a CanHold-based search with DirectMerge to bypass the state gate.
+                    // Use a fresh ignored set — the normal-path ignoredSlots may contain partially
+                    // filled slots that the direct-merge path can still write into.
+                    var fallbackIgnored = new HashSet<ItemSlot>();
+                    foreach (var destSlot in destInventory)
+                    {
+                        if (fallbackIgnored.Contains(destSlot))
+                        {
+                            continue;
+                        }
+                        var canHold = destSlot.CanHold(slot);
+                        Logger().Debug("[StorageTweaks]     destSlot={0} empty={1} canHold={2} destQty={3} destMax={4}",
+                            destSlot.GetType().Name, destSlot.Empty, canHold,
+                            destSlot.Itemstack?.StackSize ?? 0, destSlot.MaxSlotStackSize);
+                        if (!canHold)
+                        {
+                            fallbackIgnored.Add(destSlot);
+                            continue;
+                        }
+                        var directOp = new ItemStackMoveOperation(world, EnumMouseButton.Left, 0,
+                            EnumMergePriority.DirectMerge, slot.StackSize);
+                        slot.TryPutInto(destSlot, ref directOp);
+                        Logger().Debug("[StorageTweaks]     DirectMerge moved={0} slotEmpty={1}", directOp.MovedQuantity, slot.Empty);
+                        if (directOp.MovedQuantity == 0)
+                        {
+                            // Custom slot types (e.g. FoodShelves ItemSlotFSUniversal) re-check
+                            // freshness inside TryPutInto regardless of merge priority. If there
+                            // is room and the collectible matches, merge stacks directly.
+                            var room = destSlot.MaxSlotStackSize - (destSlot.Itemstack?.StackSize ?? 0);
+                            if (room > 0 && !destSlot.Empty &&
+                                destSlot.Itemstack!.Collectible == slot.Itemstack.Collectible)
+                            {
+                                var toMove = Math.Min(slot.StackSize, room);
+                                destSlot.Itemstack.StackSize += toMove;
+                                slot.Itemstack.StackSize -= toMove;
+                                if (slot.Itemstack.StackSize <= 0)
+                                {
+                                    slot.Itemstack = null;
+                                }
+                                destSlot.MarkDirty();
+                                slot.MarkDirty();
+                                Logger().Debug("[StorageTweaks]     Direct stack merge moved={0}", toMove);
+                            }
+                            else
+                            {
+                                fallbackIgnored.Add(destSlot);
+                            }
+                        }
+                        if (slot.Empty)
+                        {
+                            break;
+                        }
+                    }
+                    break;
+                }
 
+                Logger().Debug("[StorageTweaks]   GetBestSuitedSlot weight={0}", suitedSlot.weight);
                 slot.TryPutInto(suitedSlot.slot, ref op);
-                if (slot.Empty) break;
+                Logger().Debug("[StorageTweaks]   TryPutInto moved={0} slotEmpty={1}", op.MovedQuantity, slot.Empty);
+                if (slot.Empty)
+                {
+                    break;
+                }
 
                 ignoredSlots.Add(suitedSlot.slot);
             }
@@ -352,12 +467,15 @@ public class StorageTweaksModSystem : ModSystem
         return !SlotTypes.Contains(slot.GetType().Name);
     }
 
-    private static void LoadClientConfig(ICoreAPI api)
+    private static void LoadClientConfig(ICoreAPICommon api)
     {
         try
         {
             config = api.LoadModConfig<StorageTweaksClientConfig>("storagetweaks.json");
-            if (config != null) return;
+            if (config != null)
+            {
+                return;
+            }
 
             config = new StorageTweaksClientConfig();
             api.StoreModConfig(config, "storagetweaks.json");
@@ -391,7 +509,10 @@ public class StorageTweaksModSystem : ModSystem
         api.Input.SetHotKeyHandler("storagetweaks.sort", _ =>
         {
             var inv = api.World.Player.InventoryManager.GetOwnInventory(GlobalConstants.backpackInvClassName);
-            if (inv == null) return false;
+            if (inv == null)
+            {
+                return false;
+            }
 
             PatchUtils.SendPacket(api, new SortInventoryPacket
             {
@@ -405,16 +526,24 @@ public class StorageTweaksModSystem : ModSystem
         {
             var stackPerishables = GetClientConfig().StackPerishables;
             var count = 0;
-            foreach (var dialog in api.Gui.OpenedGuis)
+            foreach (var composer in api.Gui.OpenedGuis.Select(dialog => dialog.SingleComposer))
             {
-                var composer = dialog.SingleComposer;
-                if (composer?.DialogName == null) continue;
+                if (composer?.DialogName == null)
+                {
+                    continue;
+                }
                 if (!GuiDialogBlockEntityInventoryPatch.DialogNamePrefixes.Any(prefix =>
-                        composer.DialogName.StartsWith(prefix, StringComparison.Ordinal))) continue;
+                    composer.DialogName.StartsWith(prefix, StringComparison.Ordinal)))
+                {
+                    continue;
+                }
 
                 var inv = PatchUtils.GetInventoryForComposer(composer);
 
-                if (inv == null) continue;
+                if (inv == null)
+                {
+                    continue;
+                }
 
                 PatchUtils.SendPacket(api, new SortInventoryPacket
                 {
@@ -441,6 +570,9 @@ public class StorageTweaksModSystem : ModSystem
     {
         harmony?.UnpatchAll("storagetweaks");
         capi?.StoreModConfig(GetClientConfig(), "storagetweaks.json");
-        if (sapi != null) sapi.Event.PlayerJoin -= OnPlayerJoin;
+        if (sapi != null)
+        {
+            sapi.Event.PlayerJoin -= OnPlayerJoin;
+        }
     }
 }

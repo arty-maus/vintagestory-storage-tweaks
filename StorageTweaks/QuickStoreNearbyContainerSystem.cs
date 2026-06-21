@@ -12,7 +12,7 @@ public static class QuickStoreNearbyContainerSystem
     private const int SearchRadius = 8;
 
     // Chest types to include when looking for nearby chests to quick deposit matching items from inventory
-    private static readonly HashSet<(string, string)> QuickStackChestTypes =
+    private readonly static HashSet<(string, string)> QuickStackChestTypes =
     [
         // vanilla baskets
         ("basket", "reed"),
@@ -185,10 +185,9 @@ public static class QuickStoreNearbyContainerSystem
         foreach (var container in nearbyContainers)
         {
             StorageTweaksModSystem.UnloadInventory(fromPlayer, container.Inventory, packet.StackPerishables);
-            if (container.Block.Code.Domain == "purposefulstorage")
-            {
-                container.MarkDirty(true);
-            }
+            // MarkDirty(true) forces mesh re-tessellation on clients — required for BlockEntityDisplay
+            // subclasses (FoodShelves, Purposeful Storage) that render their contents in the world.
+            container.MarkDirty(true);
         }
     }
 }
