@@ -349,43 +349,36 @@ public class StorageTweaksModSystem : ModSystem
                 var suitedSlot = destInventory.GetBestSuitedSlot(slot, op, ignoredSlots);
                 if (suitedSlot.slot == null || suitedSlot.weight == 0)
                 {
-                    // GetBestSuitedSlot hardcodes AutoMerge internally, blocking perishable items
-                    // (flour, liquids in FoodShelves) with mismatched transition states. Fall back
-                    // to a CanHold-based search to bypass the state gate.
-                    // FS slots always use DirectMerge — their GetBestSuitedSlot hardcodes AutoMerge
-                    // even when the item is otherwise compatible. Non-FS slots respect mergePriority
-                    // so the StackPerishables preference is honoured for regular containers.
-                    // Use a fresh ignored set — the normal-path ignoredSlots may contain partially
-                    // filled slots that the fallback path can still write into.
                     var fallbackIgnored = new HashSet<ItemSlot>();
                     foreach (var destSlot in destInventory)
                     {
-                        if (fallbackIgnored.Contains(destSlot)) continue;
+                        if (fallbackIgnored.Contains(destSlot))
+                        {
+                            continue;
+                        }
                         if (!destSlot.CanHold(slot))
                         {
                             fallbackIgnored.Add(destSlot);
                             continue;
                         }
-                        var isFsSlot = destSlot.GetType().Name.StartsWith("ItemSlotFS");
+                        var isFsSlot = destSlot.GetType().Name.StartsWith("ItemSlotFS"); //FoodStorage stack merge override
                         var fallbackPriority = isFsSlot ? EnumMergePriority.DirectMerge : mergePriority;
                         var fallbackOp = new ItemStackMoveOperation(world, EnumMouseButton.Left, 0,
                             fallbackPriority, slot.StackSize);
                         slot.TryPutInto(destSlot, ref fallbackOp);
                         if (fallbackOp.MovedQuantity == 0 && isFsSlot)
                         {
-                            // ItemSlotFSUniversal re-checks freshness inside TryPutInto regardless
-                            // of merge priority. Merge stacks directly when there is room and the
-                            // stacks are content-equal (ignoring transition state).
-                            // Collectible-only equality is not enough — empty and filled
-                            // bowls/crocks share a Collectible but differ in content attributes.
                             var room = destSlot.MaxSlotStackSize - (destSlot.Itemstack?.StackSize ?? 0);
                             if (room > 0 && !destSlot.Empty &&
-                                destSlot.Itemstack!.Equals(world, slot.Itemstack, GlobalConstants.IgnoredStackAttributes))
+                                destSlot.Itemstack.Equals(world, slot.Itemstack, GlobalConstants.IgnoredStackAttributes))
                             {
                                 var toMove = Math.Min(slot.StackSize, room);
                                 destSlot.Itemstack.StackSize += toMove;
                                 slot.Itemstack.StackSize -= toMove;
-                                if (slot.Itemstack.StackSize <= 0) slot.Itemstack = null;
+                                if (slot.Itemstack.StackSize <= 0)
+                                {
+                                    slot.Itemstack = null;
+                                }
                                 destSlot.MarkDirty();
                                 slot.MarkDirty();
                             }
@@ -394,13 +387,19 @@ public class StorageTweaksModSystem : ModSystem
                                 fallbackIgnored.Add(destSlot);
                             }
                         }
-                        if (slot.Empty) break;
+                        if (slot.Empty)
+                        {
+                            break;
+                        }
                     }
                     break;
                 }
 
                 slot.TryPutInto(suitedSlot.slot, ref op);
-                if (slot.Empty) break;
+                if (slot.Empty)
+                {
+                    break;
+                }
                 ignoredSlots.Add(suitedSlot.slot);
             }
         }
